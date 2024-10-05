@@ -13,7 +13,7 @@ mod default_nouns;
 /// use haikunator::{Haikunator, HaikunatorParams};
 ///
 /// let h = Haikunator::new(HaikunatorParams {
-///     create_rng: || rand::rngs::ThreadRng::default(),
+///     rng: rand::rngs::ThreadRng::default(),
 ///     adjectives: &["flying", "bubbly"],
 ///     nouns: &["bat", "soda"],
 ///     delimiter: "-",
@@ -38,7 +38,7 @@ pub struct Haikunator<'a, R: Rng> {
 
 /// Parameters for `Haikunator::new_parametrized`.
 pub struct HaikunatorParams<'a, R: Rng> {
-    pub create_rng: fn() -> R,
+    pub rng: R,
     pub adjectives: &'a [&'a str],
     pub nouns: &'a [&'a str],
     pub delimiter: &'static str,
@@ -50,7 +50,7 @@ pub struct HaikunatorParams<'a, R: Rng> {
 impl Default for HaikunatorParams<'static, rand::rngs::ThreadRng> {
     fn default() -> Self {
         Self {
-            create_rng: || rand::thread_rng(),
+            rng: rand::rngs::ThreadRng::default(),
             adjectives: default_adjectives::DEFAULT_ADJECTIVES,
             nouns: default_nouns::DEFAULT_NOUNS,
             delimiter: "-",
@@ -65,7 +65,7 @@ impl<'a, R: Rng> Haikunator<'a, R> {
     /// Creates a new Haikunator with the given parameters.
     pub fn new(params: HaikunatorParams<'a, R>) -> Self {
         Self {
-            rng: RefCell::new((params.create_rng)()),
+            rng: RefCell::new(params.rng),
             adjectives: params.adjectives,
             nouns: params.nouns,
             delimiter: params.delimiter,
