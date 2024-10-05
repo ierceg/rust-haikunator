@@ -1,4 +1,4 @@
-use haikunator::Haikunator;
+use haikunator::{Haikunator, HaikunatorParams};
 use regex::Regex;
 
 #[test]
@@ -33,13 +33,13 @@ fn it_uses_custom_delimiter() {
 
 #[test]
 fn it_returns_4_digits_hex_token() {
-    let h = Haikunator {
+    let h = Haikunator::new(HaikunatorParams {
         delimiter: "-",
         token_length: 4,
         token_hex: true,
         token_chars: "overriden by token_hex=true",
         ..Default::default()
-    };
+    });
 
     let re = Regex::new(r"^\w+-\w+-[0123456789abcdef]{4}$").unwrap();
 
@@ -50,14 +50,15 @@ fn it_returns_4_digits_hex_token() {
 
 #[test]
 fn it_uses_custom_adj_noun() {
-    let h = Haikunator {
+    let h = Haikunator::new(HaikunatorParams {
         adjectives: &["flying", "bubbly"],
         nouns: &["bat", "soda"],
         delimiter: "-",
         token_length: 4,
         token_hex: false,
         token_chars: "123",
-    };
+        ..Default::default()
+    });
 
     let name = h.haikunate();
     let parts: Vec<&str> = name.split("-").collect();
@@ -68,14 +69,15 @@ fn it_uses_custom_adj_noun() {
 
 #[test]
 fn it_returns_10_count_tokens() {
-    let h = Haikunator {
+    let h = Haikunator::new(HaikunatorParams {
         adjectives: &["flying", "bubbly"],
         nouns: &["bat", "soda"],
         delimiter: "-",
         token_length: 10,
         token_hex: false,
         token_chars: "0123456789忠犬ハチ公",
-    };
+        ..Default::default()
+    });
 
     let re = Regex::new(r"^\w+-\w+-[0123456789忠犬ハチ公]{10}$").unwrap();
 
@@ -111,13 +113,13 @@ fn it_permits_custom_token_chars() {
 
 #[test]
 fn it_supports_unicode_codepoints() {
-    let h = Haikunator {
+    let h = Haikunator::new(HaikunatorParams {
         delimiter: "-",
         token_length: 5,
         token_hex: false,
         token_chars: "忠犬ハチ公",
         ..Default::default()
-    };
+    });
 
     let re = Regex::new(r"^\w+-\w+-[0123456789忠犬ハチ公]{5}$").unwrap();
 

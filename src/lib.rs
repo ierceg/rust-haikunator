@@ -1,4 +1,5 @@
-use rand::{thread_rng, Rng};
+use rand::Rng;
+use std::cell::RefCell;
 
 mod default_adjectives;
 mod default_nouns;
@@ -9,22 +10,24 @@ mod default_nouns;
 /// # Examples
 ///
 /// ```
-/// use haikunator::Haikunator;
+/// use haikunator::{Haikunator, HaikunatorParams};
 ///
-/// let h = Haikunator {
+/// let h = Haikunator::new(HaikunatorParams {
+///     create_rng: || rand::rngs::ThreadRng::default(),
 ///     adjectives: &["flying", "bubbly"],
 ///     nouns: &["bat", "soda"],
 ///     delimiter: "-",
 ///     token_length: 8,
 ///     token_hex: false,
 ///     token_chars: "0123456789忠犬ハチ公"
-/// };
+/// });
 ///
 /// ```
 ///
 /// **Note**: If `token_hex` is true, the value of `token_chars` is ignored.
 #[derive(Debug)]
-pub struct Haikunator<'a> {
+pub struct Haikunator<'a, R: Rng> {
+    rng: RefCell<R>,
     pub adjectives: &'a [&'a str],
     pub nouns: &'a [&'a str],
     pub delimiter: &'a str,
@@ -33,18 +36,21 @@ pub struct Haikunator<'a> {
     pub token_chars: &'a str,
 }
 
-impl<'a> Default for Haikunator<'a> {
-    /// Constructs a new Haikunator with default values.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use haikunator::Haikunator;
-    ///
-    /// let h = Haikunator::default();
-    /// ```
+/// Parameters for `Haikunator::new_parametrized`.
+pub struct HaikunatorParams<'a, R: Rng> {
+    pub create_rng: fn() -> R,
+    pub adjectives: &'a [&'a str],
+    pub nouns: &'a [&'a str],
+    pub delimiter: &'static str,
+    pub token_length: usize,
+    pub token_hex: bool,
+    pub token_chars: &'static str,
+}
+
+impl Default for HaikunatorParams<'static, rand::rngs::ThreadRng> {
     fn default() -> Self {
-        Haikunator {
+        Self {
+            create_rng: || rand::thread_rng(),
             adjectives: default_adjectives::DEFAULT_ADJECTIVES,
             nouns: default_nouns::DEFAULT_NOUNS,
             delimiter: "-",
@@ -55,7 +61,20 @@ impl<'a> Default for Haikunator<'a> {
     }
 }
 
-impl<'a> Haikunator<'a> {
+impl<'a, R: Rng> Haikunator<'a, R> {
+    /// Creates a new Haikunator with the given parameters.
+    pub fn new(params: HaikunatorParams<'a, R>) -> Self {
+        Self {
+            rng: RefCell::new((params.create_rng)()),
+            adjectives: params.adjectives,
+            nouns: params.nouns,
+            delimiter: params.delimiter,
+            token_length: params.token_length,
+            token_hex: params.token_hex,
+            token_chars: params.token_chars,
+        }
+    }
+
     /// Generates random heroku-like short names using a combination
     // of adjective, noun, and the delimiter.
     ///
@@ -68,35 +87,25 @@ impl<'a> Haikunator<'a> {
     /// println!("{:?}", h.haikunate());
     /// ```
     pub fn haikunate(&self) -> String {
-        // determine tokens to use
-        let tokens;
-
-        if self.token_hex {
-            tokens = "0123456789abcdef";
+        let tokens = if self.token_hex {
+            "0123456789abcdef"
         } else {
-            tokens = self.token_chars;
-        }
+            self.token_chars
+        };
 
-        let mut rng = thread_rng();
-
-        // pick adjective and noun
-        let adjective;
-        let noun;
-
-        // avoid panic when low >= high in gen_range
-        if !self.adjectives.is_empty() {
-            adjective = self.adjectives[rng.gen_range(0..self.adjectives.len())];
+        let mut rng = self.rng.borrow_mut();
+        let adjective = if !self.adjectives.is_empty() {
+            self.adjectives[rng.gen_range(0..self.adjectives.len())]
         } else {
-            adjective = "";
-        }
+            ""
+        };
 
-        if !self.nouns.is_empty() {
-            noun = self.nouns[rng.gen_range(0..self.nouns.len())];
+        let noun = if !self.nouns.is_empty() {
+            self.nouns[rng.gen_range(0..self.nouns.len())]
         } else {
-            noun = "";
-        }
+            ""
+        };
 
-        // create token
         let mut token = String::with_capacity(self.token_length);
         let count = tokens.chars().count();
 
@@ -107,9 +116,23 @@ impl<'a> Haikunator<'a> {
             }
         }
 
-        // create and return result
         let mut parts = vec![adjective, noun, &token];
         parts.retain(|s: &&str| !s.is_empty());
         parts.join(self.delimiter)
+    }
+}
+
+impl Default for Haikunator<'static, rand::rngs::ThreadRng> {
+    /// Constructs a new Haikunator with default values.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use haikunator::Haikunator;
+    ///
+    /// let h = Haikunator::default();
+    /// ```
+    fn default() -> Self {
+        Self::new(HaikunatorParams::default())
     }
 }
