@@ -32,3 +32,4 @@ rand = "0.8.2"
 
 [dev-dependencies]
 regex = "1.4.3"
+rand = { version = "0.8.5", features = ["small_rng"] }
