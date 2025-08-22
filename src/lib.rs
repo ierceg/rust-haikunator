@@ -95,13 +95,13 @@ impl<'a, R: Rng> Haikunator<'a, R> {
 
         let mut rng = self.rng.borrow_mut();
         let adjective = if !self.adjectives.is_empty() {
-            self.adjectives[rng.gen_range(0..self.adjectives.len())]
+            self.adjectives[rng.random_range(0..self.adjectives.len())]
         } else {
             ""
         };
 
         let noun = if !self.nouns.is_empty() {
-            self.nouns[rng.gen_range(0..self.nouns.len())]
+            self.nouns[rng.random_range(0..self.nouns.len())]
         } else {
             ""
         };
@@ -111,7 +111,7 @@ impl<'a, R: Rng> Haikunator<'a, R> {
 
         if count > 0 {
             for _ in 0..self.token_length {
-                let index = rng.gen_range(0..count);
+                let index = rng.random_range(0..count);
                 token.push(tokens.chars().nth(index).unwrap());
             }
         }
